@@ -125,44 +125,138 @@ router.get('/', jsonParser, can(config.flowReadPermission), async (req, res) => 
 
 // Adds a new flow to the repository
 router.post('/', jsonParser, can(config.flowWritePermission), async (req, res) => {
-  const newFlow = req.body;
+  const { body } = req;
+  // If not array, make it an array with one element
+  const newFlows = Array.isArray(body) ? body : [body];
 
+  const errors = [];
+  const storeFlows = [];
+  newFlows.forEach((newFlow) => {
   // Automatically adds the current user as an owner, if not already included.
-  if (!newFlow.owners) {
-    newFlow.owners = [];
-  }
-  if (newFlow.owners.findIndex((o) => (o.id === req.user.sub)) === -1) {
-    newFlow.owners.push({ id: req.user.sub, type: 'user' });
-  }
+    if (!newFlow.owners) {
+      newFlow.owners = [];
+    }
+    if (newFlow.owners.findIndex((o) => (o.id === req.user.sub)) === -1) {
+      newFlow.owners.push({ id: req.user.sub, type: 'user' });
+    }
 
-  const storeFlow = new Flow(newFlow);
-  const errors = validate(storeFlow);
+    const storeFlow = new Flow(newFlow);
+    storeFlows.push(storeFlow);
+    const error = validate(storeFlow);
+    // Only add errors array if there are errors
+    if (error && error.length > 0) {
+      errors.push(error);
+    }
+  });
 
   if (errors && errors.length > 0) {
-    return res.status(400).send({ errors });
+    log.error(`Validation errors: ${JSON.stringify(errors)}`);
+    return res.status(400).send({ errors, test: 'test' });
   }
 
   try {
-    const response = await storage.addFlow(storeFlow);
+    const responses = [];
+    const results = await storage.addFlows(storeFlows);
+    log.debug(`Results: ${JSON.stringify(results)}`);
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        log.debug(`Flow created ${JSON.stringify(result)}`);
+        log.debug(`Flow ${JSON.stringify(result.value)} created`);
+        const ev = {
+          headers: {
+            name: 'flowrepo.flow.created',
+          },
+          payload: {
+            tenant: (req.user.tenant) ? req.user.tenant : '',
+            user: req.user.sub,
+            flowId: result.value.id,
+          },
+        };
+        await publishQueue(ev);
+      } else {
+        log.error(`Issue creating flow ${JSON.stringify(result.reason)}`);
+      }
+      responses.push(result);
+    }
 
-    const ev = {
-      headers: {
-        name: 'flowrepo.flow.created',
-      },
-      payload: {
-        tenant: (req.user.tenant) ? req.user.tenant : '',
-        user: req.user.sub,
-        flowId: response.id,
-      },
-    };
-
-    await publishQueue(ev);
-
-    return res.status(201).send({ data: response, meta: {} });
+    log.debug(`Responses: ${JSON.stringify(responses)}`);
+    if (!Array.isArray(body) && responses[0] && responses[0].value) {
+      // Send single flow creation result
+      return res.status(201).send({ data: responses[0].value, meta: {} });
+    }
+    if (!Array.isArray(body) && responses[0] && responses[0].reason) {
+      // Send single flow creation failure
+      throw responses[0].reason;
+    }
+    if (responses.find((response) => response.status === 'rejected')) {
+      return res.status(500).send({ errors: [{ message: responses }] });
+    }
+    return res.status(201).send({ data: results, meta: {} });
   } catch (err) {
     log.error(err);
     return res.status(500).send({ errors: [{ message: err }] });
   }
+});
+
+router.put('/', jsonParser, can(config.flowWritePermission), async (req, res) => {
+  const { body } = req;
+  // If not array, make it an array with one element
+  const updatedFlows = Array.isArray(body) ? body : [body];
+  const newFlows = [];
+
+  for (const updatedFlow of updatedFlows) {
+    log.debug(`PUT Requested update to flow: ${JSON.stringify(updatedFlow)}`);
+    if (!mongoose.Types.ObjectId.isValid(updatedFlow.id)) {
+      return res.status(400).send({ errors: `Invalid id ${updatedFlow.id}` });
+    }
+
+    const flow = await storage.getFlowById(updatedFlow.id, req.user);
+    log.debug(`PUT Found flow: ${JSON.stringify(flow)}`);
+    if (!flow) {
+      log.info(`PUT Flow ${updatedFlow.id} not found`);
+      return res.status(404).send({ errors: [{ message: `Flow with id ${updatedFlow.id} not found` }] });
+    }
+    if (flow.status !== 'inactive') {
+      log.info(`Flow ${updatedFlow.id} is not inactive`);
+      return res.status(409).send({ errors: [{ message: `Flow ${updatedFlow.id} is not inactive. Current status: ${flow.status}`, code: 409 }] });
+    }
+
+    updatedFlow._id = updatedFlow.id;
+    delete updatedFlow.id;
+
+    const updatedFlowObject = new Flow(updatedFlow);
+    const error = validate(updatedFlowObject);
+    log.debug(`PUT Validation errors: ${JSON.stringify(error)}`);
+    if (error && error.length > 0) {
+      log.error(`PUT Returning 400 response ${updatedFlow.id}`);
+      return res.status(400).send({ errors: [{ message: error }] });
+    }
+    try {
+      log.debug(`PUT updatedFlowObject is ${JSON.stringify(updatedFlowObject)}`);
+      const response = await storage.updateFlow(updatedFlowObject, req.user);
+      log.debug(`PUT Response: ${JSON.stringify(response)}`);
+      if (response) {
+        newFlows.push(response);
+        const ev = {
+          headers: {
+            name: 'flowrepo.flow.modified',
+          },
+          payload: {
+            tenant: (req.user.tenant) ? req.user.tenant : '',
+            user: req.user.sub,
+            flowId: response.id,
+          },
+        };
+
+        await publishQueue(ev);
+      }
+    } catch (err) {
+      log.error(`Exception while updating flow: ${JSON.stringify(err)}`);
+      return res.status(500).send({ errors: [{ message: err }] });
+    }
+  }
+  log.debug(`PUT Returning 200 response ${JSON.stringify(newFlows)}`);
+  return res.status(200).send({ data: newFlows, meta: {} });
 });
 
 // Updates a flow with body data

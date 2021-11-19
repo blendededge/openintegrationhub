@@ -130,16 +130,33 @@ const addFlow = (storeFlow) => new Promise((resolve) => {
     });
 });
 
+const addFlows = (storeFlows) => new Promise((resolve) => {
+  if (Array.isArray(storeFlows)) {
+    const promises = [];
+    storeFlows.forEach((storeFlow) => {
+      const promise = storeFlow.save();
+      promise.then((doc) => format(doc._doc));
+      promises.push(promise);
+    });
+    Promise.allSettled(promises)
+      .then((results) => {
+        resolve(results);
+      });
+  }
+});
+
 const updateFlow = (storeFlow, user) => new Promise((resolve) => {
   const qry = buildQuery(user, config.flowWritePermission, storeFlow.id);
   Flow.findOneAndUpdate(qry, storeFlow,
     { upsert: false, new: true }).lean()
     .then((doc) => {
+      log.debug(`updateFlow: doc = ${JSON.stringify(doc)}`);
       const flow = format(doc);
+      log.debug(`updateFlow: flow = ${flow}`);
       resolve(flow);
     })
     .catch((err) => {
-      log.error(err);
+      log.error('updateFlow error', err);
     });
 });
 
@@ -259,6 +276,7 @@ const getOrphanedFlows = () => new Promise((resolve) => {
 module.exports = {
   getFlows,
   addFlow,
+  addFlows,
   startingFlow,
   stoppingFlow,
   startedFlow,
