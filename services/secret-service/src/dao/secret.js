@@ -38,9 +38,9 @@ function cryptoSecret(secret, key, method = ENCRYPT, selection = []) {
         if (secret.value[field]) {
             if (method === ENCRYPT) {
                 if (!conf.crypto.isDisabled) {
-                    if (secret.encryptedFields.includes(field)) {
-                        throw (new Error(`Field ${field} already encrypted!`));
-                    }
+                    // if (secret.encryptedFields.includes(field)) {
+                    //     throw (new Error(`Field ${field} already encrypted!`));
+                    // }
 
                     let value = secret.value[field];
 
