@@ -96,6 +96,8 @@ kubectl apply -f ./k8s
 | ATTACHMENT_STORAGE_SERVICE_BASE_URL | Base URL of the Attachment Storage.                                                         |
 | SNAPSHOTS_SERVICE_BASE_URL          | Base URL of the Snapshots service.                                                          |
 | TICK_INTERVAL                       | Main loop interval.                                                                         |
+| SUBSCRIBE_PREFETCH                  | Prefetch value to use for "component-orchestrator" queue                                    |
+| BACKCHANNEL_PREFETCH                | Prefetch value to use for orchestrator_backchannel ":messages" and ":errors" queues         |
 
 ### Kubernetes driver specific
 
