@@ -27,6 +27,9 @@ class ComponentOrchestratorApp extends App {
         await k8s.start(config.get('KUBE_CONFIG'));
 
         const channel = await amqp.getConnection().createChannel();
+        const backchannelPrefetchCount = parseInt(config.get('BACKCHANNEL_PREFETCH') || '0')
+        await channel.prefetch(backchannelPrefetchCount);
+        console.log(`backchannel prefetchCount set to ${backchannelPrefetchCount}`);
 
         channel.on('error', function(err) {
           console.error('Channel Error!');
