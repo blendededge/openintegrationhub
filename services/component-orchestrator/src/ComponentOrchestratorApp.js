@@ -29,7 +29,7 @@ class ComponentOrchestratorApp extends App {
 
         const channel = await amqp.getConnection().createChannel();
 
-        channel.prefetch(process.env.PREFETCH_COUNT || 1000);
+        await channel.prefetch(process.env.PREFETCH_COUNT || 1000);
 
         channel.on('error', function (err) {
             logger.fatal(err, 'RabbitMQ channel error');
