@@ -10,6 +10,7 @@ module.exports = {
         OA1_TWO_LEGGED: 'OA1_TWO_LEGGED',
         OA1_THREE_LEGGED: 'OA1_THREE_LEGGED',
         OA2_AUTHORIZATION_CODE: 'OA2_AUTHORIZATION_CODE',
+        OA2_PASSWORD: 'OA2_PASSWORD',
         SIMPLE: 'SIMPLE',
         MIXED: 'MIXED',
         SESSION_AUTH: 'SESSION_AUTH',
@@ -46,6 +47,7 @@ module.exports = {
             'username',
             'payload',
             'inputFields',
+            'consumerSecret',
         ],
         // subset of SENSITIVE_FIELDS
         OBJECT_FIELDS: [
