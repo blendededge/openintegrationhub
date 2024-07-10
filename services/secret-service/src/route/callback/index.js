@@ -12,7 +12,6 @@ const log = logger.getLogger(`${conf.log.namespace}/callback`, {
 
 const router = express.Router();
 
-
 router.get('/', async (req, res, next) => {
     try {
         const queryObject = qs.parse(url.parse(req.originalUrl).query);
