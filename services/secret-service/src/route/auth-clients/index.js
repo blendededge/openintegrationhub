@@ -13,7 +13,7 @@ const conf = require('../../conf');
 const { ROLE, ENTITY_TYPE, AUTH_TYPE } = require('../../constant');
 const authFlowManager = require('../../auth-flow-manager');
 const Pagination = require('../../util/pagination');
-const { OA2_AUTHORIZATION_CODE } = require('../../constant').AUTH_TYPE;
+const { OA2_AUTHORIZATION_CODE, OA2_PASSWORD } = require('../../constant').AUTH_TYPE;
 const handleOAuth2Password = require('../callback/handle-oauth2-password');
 
 const log = logger.getLogger(`${conf.log.namespace}/auth-client`);
@@ -26,6 +26,13 @@ const authClientObfuscator = {
         ...value,
         clientId: '***',
         clientSecret: '***',
+    }),
+
+    [OA2_PASSWORD]: (value) => ({
+        ...value,
+        clientId: '***',
+        clientSecret: '***',
+        password: '***',
     }),
 };
 
