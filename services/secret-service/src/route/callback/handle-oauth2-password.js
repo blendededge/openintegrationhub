@@ -2,9 +2,7 @@ const moment = require('moment');
 const authFlowManager = require('../../auth-flow-manager');
 const AuthClientDAO = require('../../dao/auth-client');
 
-module.exports = async function handleOAuth2Password({
-    data,
-}) {
+module.exports = async function handleOAuth2Password(data) {
     const {
         authClientId, username, password, scope, name,
     } = data;
@@ -48,7 +46,7 @@ module.exports = async function handleOAuth2Password({
             expires,
             refreshToken: refresh_token,
             scope: returnedScope,
-            fullResponse: response,
+            fullResponse: JSON.stringify(response),
         },
     };
 };

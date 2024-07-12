@@ -207,7 +207,7 @@ module.exports = {
             expires: String,
             refreshToken: String,
             scope: String,
-            fullResponse: Schema.Types.Mixed,
+            fullResponse: String,
         },
     })),
 };
