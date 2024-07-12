@@ -310,10 +310,8 @@ module.exports = {
             password,
         };
 
-        const selectedScope = scope || authClient.predefinedScope;
-
-        if (selectedScope) {
-            params.scope = selectedScope;
+        if (scope) {
+            params.scope = scope;
         }
 
         const headers = {};

@@ -143,6 +143,8 @@ module.exports = {
                 default: false,
             },
             predefinedScope: String,
+            username: String,
+            password: String,
         })),
     [SESSION_AUTH]:
         AuthClient.discriminator(`A_${SESSION_AUTH}`, new Schema({

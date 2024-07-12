@@ -8,9 +8,10 @@ const SecretDAO = require('../../dao/secret');
 const { ROLE, AUTH_TYPE } = require('../../constant');
 const { maskString, maskSecret } = require('../../util/common');
 const Pagination = require('../../util/pagination');
+const handleOAuth2Password = require('../callback/handle-oauth2-password');
 
 const {
-    SIMPLE, MIXED, API_KEY, OA2_AUTHORIZATION_CODE, SESSION_AUTH,
+    SIMPLE, MIXED, API_KEY, OA2_AUTHORIZATION_CODE, SESSION_AUTH, OA2_PASSWORD,
 } = AUTH_TYPE;
 
 const log = logger.getLogger(`${conf.log.namespace}/secrets`);
@@ -115,13 +116,22 @@ class SecretsRouter {
         });
 
         this.router.post('/', getKeyParameter, getKey, async (req, res, next) => {
-            const data = req.body.data ? req.body.data : req.body;
+            let data = req.body.data ? req.body.data : req.body;
             try {
                 if (!this.ownersIsValid(data.owners, req.user)) {
                     return next({
                         status: 400,
                         message: 'Owners is not valid',
                     });
+                }
+
+                if (!data.type) {
+                    throw new Error('The "type" field is required');
+                }
+
+                // if type is OA2_PASSWORD, use the specified auth client to generate token
+                if (data.type === OA2_PASSWORD) {
+                    data = await handleOAuth2Password(data);
                 }
 
                 const owners = [{
@@ -170,13 +180,22 @@ class SecretsRouter {
         });
 
         this.router.patch('/:id', userIsOwnerOfSecret, getKeyParameter, getKey, async (req, res, next) => {
-            const data = req.body.data ? req.body.data : req.body;
+            let data = req.body.data ? req.body.data : req.body;
             try {
                 if (!this.ownersIsValid(data.owners, req.user)) {
                     return next({
                         status: 400,
                         message: 'Owners is not valid',
                     });
+                }
+
+                if (!data.type) {
+                    throw new Error('The "type" field is required');
+                }
+
+                // if type is OA2_PASSWORD, use the specified auth client to generate token
+                if (data.type === OA2_PASSWORD) {
+                    data = await handleOAuth2Password(data);
                 }
 
                 res.send({

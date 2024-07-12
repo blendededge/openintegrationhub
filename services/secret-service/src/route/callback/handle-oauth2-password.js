@@ -1,33 +1,34 @@
 const moment = require('moment');
-const find = require('lodash/find');
-const logger = require('@basaas/node-logger');
 const authFlowManager = require('../../auth-flow-manager');
-const SecretDAO = require('../../dao/secret');
-const { ROLE } = require('../../constant');
-const conf = require('../../conf');
-const { getKey } = require('../../middleware/key');
-
-const log = logger.getLogger(`${conf.log.namespace}/callback/handle-oauth2`);
+const AuthClientDAO = require('../../dao/auth-client');
 
 module.exports = async function handleOAuth2Password({
-    req,
-    authClient,
-    username,
-    password,
-    scope,
-    creator,
+    data,
 }) {
+    const {
+        authClientId, username, password, scope, name,
+    } = data;
+
+    const authClient = await AuthClientDAO.findById(authClientId);
+
+    if (!authClient) {
+        throw new Error('AuthClient not found');
+    }
+
+    const resolvedUsername = username || authClient.username;
+    const resolvedPassword = password || authClient.password;
+    const resolvedScope = scope || authClient.scope;
+
     const response = await authFlowManager.exchangeRequestPasswordFlow({
-        authClient, username, password, scope,
+        authClient,
+        username: resolvedUsername,
+        password: resolvedPassword,
+        scope: resolvedScope,
     });
 
     if (response.error || !response.access_token) {
         throw new Error(`Failed to get token: ${response.error || 'No token received'}`);
     }
-
-    let modifiedSecret = null;
-    // fetch key
-    const key = await getKey(req);
 
     const {
         access_token, token_type, expires_in, refresh_token, scope: returnedScope,
@@ -36,12 +37,10 @@ module.exports = async function handleOAuth2Password({
     const expires = (expires_in !== undefined && !Number.isNaN(expires_in))
         ? moment().add(expires_in, 'seconds').format() : moment(1e15).format();
 
-    let secret = {
-        owners: [{
-            id: creator,
-            type: ROLE.USER,
-        }],
+    return {
+        owners: [],
         type: authClient.type,
+        name,
         value: {
             authClientId: authClient._id,
             accessToken: access_token,
@@ -50,52 +49,6 @@ module.exports = async function handleOAuth2Password({
             refreshToken: refresh_token,
             scope: returnedScope,
             fullResponse: response,
-        },
-    };
-
-    secret = await authFlowManager.preprocessSecret({
-        authClient,
-        secret,
-        tokenResponse: response,
-        localMiddleware: req.app.locals.middleware,
-    });
-
-    // try to find secret by external id to prevent duplication
-    const _secret = await SecretDAO.findByExternalId(
-        secret.value.externalId,
-        authClient._id,
-    );
-
-    if (_secret) {
-        const updateValues = {
-            id: _secret._id,
-            data: {
-                value: {
-                    scope: returnedScope,
-                    expires,
-                    refreshToken: refresh_token,
-                    accessToken: access_token,
-                },
-            },
-        };
-
-        if (!find(_secret.owners, { id: creator })) {
-            updateValues.data.owners = _secret.owners;
-            updateValues.data.owners.push({
-                id: creator,
-                type: ROLE.USER,
-            });
-        }
-
-        modifiedSecret = await SecretDAO.update(updateValues, key);
-    } else {
-        // create new secret
-        modifiedSecret = await SecretDAO.create(secret, key);
-    }
-
-    return {
-        data: {
-            secretId: modifiedSecret._id,
         },
     };
 };
