@@ -14,7 +14,6 @@ const { ROLE, ENTITY_TYPE, AUTH_TYPE } = require('../../constant');
 const authFlowManager = require('../../auth-flow-manager');
 const Pagination = require('../../util/pagination');
 const { OA2_AUTHORIZATION_CODE, OA2_PASSWORD } = require('../../constant').AUTH_TYPE;
-const handleOAuth2Password = require('../callback/handle-oauth2-password');
 
 const log = logger.getLogger(`${conf.log.namespace}/auth-client`);
 
@@ -256,45 +255,6 @@ class AuthClientRouter {
                         authUrl,
                     },
                 });
-            } catch (err) {
-                log.error(err);
-                next({
-                    err,
-                    status: 400,
-                    message: err.message,
-                });
-            }
-        });
-
-        this.router.post('/:id/get-token', getKeyParameter, jsonParser, async (req, res, next) => {
-            const authClient = await AuthClientDAO.findOne({ _id: req.params.id });
-            const data = req.body.data ? req.body.data : req.body;
-            const creator = req.user.sub;
-
-            try {
-                if (authClient.type !== AUTH_TYPE.OA2_PASSWORD) {
-                    return next({
-                        status: 405,
-                        message: 'get-token endpoint is only valid for OA2_PASSWORD auth clients',
-                    });
-                }
-
-                const { username, password, scope } = data;
-
-                if (!username || !password) {
-                    throw new Error('Username and password are required');
-                }
-
-                const response = await handleOAuth2Password({
-                    req,
-                    authClient,
-                    username,
-                    password,
-                    scope,
-                    creator,
-                });
-
-                res.send(response);
             } catch (err) {
                 log.error(err);
                 next({
