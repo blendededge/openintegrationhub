@@ -130,8 +130,14 @@ module.exports = {
         })),
     [OA2_PASSWORD]:
         AuthClient.discriminator(`A_${OA2_PASSWORD}`, new Schema({
-            clientId: String,
-            clientSecret: String,
+            clientId: {
+                type: String,
+                required: true,
+            },
+            clientSecret: {
+                type: String,
+                required: true,
+            },
             endpoints: {
                 token: {
                     type: String,
