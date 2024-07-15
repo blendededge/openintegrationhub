@@ -8,7 +8,6 @@ const authFlowManager = require('../../auth-flow-manager');
 const conf = require('../../conf');
 const { getKey } = require('../../middleware/key');
 
-
 const log = logger.getLogger(`${conf.log.namespace}/callback/handle-oauth2`);
 
 module.exports = async function handleOAuth({

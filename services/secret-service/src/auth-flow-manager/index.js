@@ -6,7 +6,9 @@ const { OAuth } = require('oauth');
 const logger = require('@basaas/node-logger');
 const conf = require('../conf');
 const { OA2_AUTHORIZATION_CODE, OA1_THREE_LEGGED, SESSION_AUTH } = require('../constant').AUTH_TYPE;
-const { HEADER_AUTH, BODY_AUTH, PARAMS_AUTH, FORM_AUTH } = require('../constant').AUTH_REQUEST_TYPE;
+const {
+    HEADER_AUTH, BODY_AUTH, PARAMS_AUTH, FORM_AUTH,
+} = require('../constant').AUTH_REQUEST_TYPE;
 const defaultAdapter = require('../adapter/preprocessor/default');
 
 const log = logger.getLogger(`${conf.log.namespace}/auth-flow-manager`);
@@ -82,7 +84,7 @@ async function oauthGetAuthorize({ authClient, flow }) {
 }
 
 // oauth2
-async function requestHelper(url, form) {
+async function requestHelper(url, form, headers = {}) {
     const params = new URLSearchParams();
     for (const property in form) {
         if (Object.prototype.hasOwnProperty.call(form, property)) {
@@ -105,6 +107,7 @@ async function requestHelper(url, form) {
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
             Accept: 'application/json',
+            ...headers,
         },
         body: params,
     });
@@ -296,5 +299,30 @@ module.exports = {
         return await defaultAdapter({
             flow, authClient, secret, tokenResponse,
         });
+    },
+
+    async exchangeRequestPasswordFlow({
+        authClient, username, password, scope,
+    }) {
+        const params = {
+            grant_type: 'password',
+            username,
+            password,
+        };
+
+        if (scope) {
+            params.scope = scope;
+        }
+
+        const headers = {};
+
+        if (authClient.includeCredentialsInHeader) {
+            headers.Authorization = `Basic ${Buffer.from(`${authClient.clientId}:${authClient.clientSecret}`).toString('base64')}`;
+        } else {
+            params.client_id = authClient.clientId;
+            params.client_secret = authClient.clientSecret;
+        }
+
+        return await requestHelper(authClient.endpoints.token, params, headers);
     },
 };

@@ -11,6 +11,7 @@ const {
     OA1_THREE_LEGGED,
     OA2_AUTHORIZATION_CODE,
     SESSION_AUTH,
+    OA2_PASSWORD,
 } = AUTH_TYPE;
 
 const { Schema } = mongoose;
@@ -195,5 +196,37 @@ module.exports = {
             externalId: String,
         },
     })),
-
+    [OA2_PASSWORD]: Secret.discriminator(`S_${OA2_PASSWORD}`, new Schema({
+        value: {
+            authClientId: {
+                type: Schema.Types.ObjectId,
+                required: true,
+                validate: {
+                    validator: (v) => new Promise((resolve) => {
+                        AuthClient.full.findOne({ _id: v }, (err, doc) => {
+                            if (err || !doc) {
+                                resolve(false);
+                            } else {
+                                resolve(true);
+                            }
+                        });
+                    }),
+                    // Default error message, overridden by 2nd argument to `cb()` above
+                    message: 'Auth client is not existing',
+                },
+            },
+            accessToken: {
+                type: String,
+                required: true,
+            },
+            tokenType: {
+                type: String,
+                required: true,
+            },
+            expires: String,
+            refreshToken: String,
+            scope: String,
+            fullResponse: String,
+        },
+    })),
 };

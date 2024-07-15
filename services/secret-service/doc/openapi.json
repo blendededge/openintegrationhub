@@ -566,6 +566,9 @@
           "$ref": "#/components/schemas/MutableOA2AuthorizationCodeClient"
         }, {
           "$ref": "#/components/schemas/MutableSessionAuthClient"
+        }, {
+          "$ref": "#/components/schemas/MutableOA2PasswordClient"
+        
         } ],
         "discriminator": {
           "propertyName": "type",
@@ -573,6 +576,7 @@
             "OA1_TWO_LEGGED": "#/components/schemas/MutableOA1TwoLeggedClient",
             "OA1_THREE_LEGGED": "#/components/schemas/MutableOA1ThreeLeggedClient",
             "OA2_AUTHORIZATION_CODE": "#/components/schemas/MutableOA2AuthorizationCodeClient",
+            "OA2_PASSWORD": "#/components/schemas/MutableOA2PasswordClient",
             "SESSION_AUTH": "#/components/schemas/MutableSessionAuthClient"
           }
         }
@@ -746,6 +750,58 @@
           }
         }
       },
+      "MutableOA2PasswordClient" : {
+        "required" : [ "name", "owners", "type", "clientId", "clientSecret", "endpoints"],
+        "properties" : {
+          "name" : {
+            "type" : "string"
+          },
+          "owners" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Owner"
+            }
+          },
+          "type" : {
+            "type" : "string",
+            "enum" : [ "OA1_TWO_LEGGED", "OA1_THREE_LEGGED", "OA2_AUTHORIZATION_CODE", "SESSION_AUTH", "OA2_PASSWORD" ]
+          },
+          "clientId" : {
+            "type" : "string",
+            "example": "292085223830.apps.googleusercontent.com"
+          },
+          "clientSecret" : {
+            "type" : "string",
+            "example": "F4B82757C43741436B195B28AF4AF"
+          },
+          "endpoints" : {
+            "$ref" : "#/components/schemas/MutableOA2PasswordClient_endpoints"
+          },
+          "predefinedScope": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "incluceCredentialsInHeader": {
+            "type": "boolean",
+            "description": "If true, the credentials will be sent in the header instead of the body.",
+            "default": false
+          }
+        }
+      },
+      "MutableOA2PasswordClient_endpoints" : {
+        "type" : "object",
+        "required": ["token"],
+        "properties" : {
+          "token" : {
+            "type" : "string"
+          }
+        }
+      },
       "MutableSessionAuthClient": {
         "required": ["name", "owners", "type", "fields", "endpoints"],
         "properties": {
@@ -803,6 +859,8 @@
           "$ref" : "#/components/schemas/OA2AuthorizationCodeClient"
         }, {
           "$ref": "#/components/schemas/SessionAuthClient"
+        }, {
+          "$ref": "#/components/schemas/OA2PasswordClient"
         } ],
         "discriminator": {
           "propertyName": "type",
@@ -810,6 +868,7 @@
             "OA1_TWO_LEGGED": "#/components/schemas/MutableOA1TwoLeggedClient",
             "OA1_THREE_LEGGED": "#/components/schemas/MutableOA1ThreeLeggedClient",
             "OA2_AUTHORIZATION_CODE": "#/components/schemas/MutableOA2AuthorizationCodeClient",
+            "OA2_PASSWORD": "#/components/schemas/MutableOA2PasswordClient",
             "SESSION_AUTH": "#/components/schemas/MutableSessionAuthClient"
           }
         }
@@ -863,6 +922,30 @@
       "OA2AuthorizationCodeClient" : {
         "allOf" : [ {
           "$ref" : "#/components/schemas/MutableOA2AuthorizationCodeClient"
+        }, {
+          "required" : [ "createdAt", "_id" ],
+          "type" : "object",
+          "properties" : {
+            "_id" : {
+              "type" : "string",
+              "example": ""
+            },
+            "createdAt" : {
+              "type" : "string",
+              "description" : "Client creation time",
+              "format" : "date-time"
+            },
+            "updatedAt" : {
+              "type" : "string",
+              "description" : "Client update time",
+              "format" : "date-time"
+            }
+          }
+        } ]
+      },
+      "OA2PasswordClient" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/MutableOA2PasswordClient"
         }, {
           "required" : [ "createdAt", "_id" ],
           "type" : "object",
@@ -997,7 +1080,8 @@
                 "SESSION_AUTH": "#/components/schemas/SessionAuthSecret",
                 "OA1_TWO_LEGGED": "#/components/schemas/OA1TwoLeggedSecret",
                 "OA1_THREE_LEGGED": "#/components/schemas/OA1ThreeLeggedSecret",
-                "OA2_AUTHORIZATION_CODE": "#/components/schemas/OA2AuthorizationCodeSecret"
+                "OA2_AUTHORIZATION_CODE": "#/components/schemas/OA2AuthorizationCodeSecret",
+                "OA2_PASSWORD": "#/components/schemas/OA2PasswordSecret"
               }
             },
             "oneOf" : [ {
@@ -1014,6 +1098,8 @@
               "$ref": "#/components/schemas/OA1ThreeLeggedSecret"
             }, {
               "$ref": "#/components/schemas/OA2AuthorizationCodeSecret"
+            }, {
+              "$ref": "#/components/schemas/OA2PasswordSecret"
             } ]
           },
           "owners" : {
@@ -1174,6 +1260,37 @@
           },
           "externalId": {
             "type": "string"
+          }
+        }
+      },
+      "OA2PasswordSecret" : {
+        "required" : ["authClientId", "accessToken", "tokenType"],
+        "type" : "object",
+        "properties" : {
+          "authClientId" : {
+            "type" : "string",
+            "description" : "Id of the auth client this secret was created with"
+          },
+          "refreshToken" : {
+            "type" : "string"
+          },
+          "accessToken" : {
+            "type" : "string"
+          },
+          "tokenType": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          },
+          "expires" : {
+            "type" : "string",
+            "description" : "Date object in UTC",
+            "format" : "date-time"
+          },
+          "fullResponse": {
+            "type": "string",
+            "description": "The full success response from the token endpoint (stored encrypted)"
           }
         }
       },

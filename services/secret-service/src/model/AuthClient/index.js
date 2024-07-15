@@ -8,6 +8,7 @@ const {
     OA1_THREE_LEGGED,
     OA2_AUTHORIZATION_CODE,
     SESSION_AUTH,
+    OA2_PASSWORD,
 } = require('../../constant').AUTH_TYPE;
 
 const { Schema } = mongoose;
@@ -126,6 +127,30 @@ module.exports = {
                 endSession: String,
             },
             predefinedScope: String,
+        })),
+    [OA2_PASSWORD]:
+        AuthClient.discriminator(`A_${OA2_PASSWORD}`, new Schema({
+            clientId: {
+                type: String,
+                required: true,
+            },
+            clientSecret: {
+                type: String,
+                required: true,
+            },
+            endpoints: {
+                token: {
+                    type: String,
+                    required: true,
+                },
+            },
+            includeCredentialsInHeader: {
+                type: Boolean,
+                default: false,
+            },
+            predefinedScope: String,
+            username: String,
+            password: String,
         })),
     [SESSION_AUTH]:
         AuthClient.discriminator(`A_${SESSION_AUTH}`, new Schema({

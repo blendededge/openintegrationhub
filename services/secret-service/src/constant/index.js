@@ -47,7 +47,9 @@ module.exports = {
             'username',
             'payload',
             'inputFields',
+            'fullResponse',
             'consumerSecret',
+            'password',
         ],
         // subset of SENSITIVE_FIELDS
         OBJECT_FIELDS: [
