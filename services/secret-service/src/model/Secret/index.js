@@ -108,6 +108,25 @@ module.exports = {
     })),
     [OA1_TWO_LEGGED]: Secret.discriminator(`S_${OA1_TWO_LEGGED}`, new Schema({
         value: {
+            consumerKey: {
+                type: String,
+                required: true,
+            },
+            consumerSecret: {
+                type: String,
+                required: true,
+            },
+            signatureMethod: {
+                type: String,
+                required: true,
+            },
+            version: {
+                type: String,
+                default: '1.0',
+            },
+            accessToken: String,
+            accessTokenSecret: String,
+            realm: String,
             expiresAt: String,
         },
     })),
