@@ -15,7 +15,7 @@ module.exports = async function handleOAuth2Password(data) {
 
     const resolvedUsername = username || authClient.username;
     const resolvedPassword = password || authClient.password;
-    const resolvedScope = scope || authClient.scope;
+    const resolvedScope = scope || authClient.predefinedScope;
 
     const response = await authFlowManager.exchangeRequestPasswordFlow({
         authClient,
