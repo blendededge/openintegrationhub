@@ -47,11 +47,8 @@ module.exports = {
             'username',
             'payload',
             'inputFields',
-<<<<<<< HEAD
             'fullResponse',
-=======
             'consumerSecret',
->>>>>>> master
         ],
         // subset of SENSITIVE_FIELDS
         OBJECT_FIELDS: [
