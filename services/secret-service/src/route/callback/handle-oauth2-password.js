@@ -4,7 +4,7 @@ const AuthClientDAO = require('../../dao/auth-client');
 
 module.exports = async function handleOAuth2Password(data) {
     const {
-        authClientId, username, password, scope, name,
+        authClientId, username, password, scope, name, owners,
     } = data;
 
     const authClient = await AuthClientDAO.findById(authClientId);
@@ -36,7 +36,7 @@ module.exports = async function handleOAuth2Password(data) {
         ? moment().add(expires_in, 'seconds').format() : moment(1e15).format();
 
     return {
-        owners: [],
+        owners,
         type: authClient.type,
         name,
         value: {
