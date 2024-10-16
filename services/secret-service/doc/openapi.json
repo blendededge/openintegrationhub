@@ -1206,8 +1206,39 @@
       "OA1TwoLeggedSecret": {
         "type": "object",
         "properties": {
-          "expiresAt": {
+          "consumerKey": {
+            "type": "string",
+            "required": true,
+            "description": "The Consumer Key may also be known as 'Client Key', 'Consumer Identifier', or 'API Key'"
+          },
+          "consumerSecret": {
+            "type": "string",
+            "required": true,
+            "description": "The Consumer Secret may also be known as 'Client Secret', 'Shared Secret', or 'API Secret'"
+          },
+          "signatureMethod": {
+            "type": "string",
+            "required": true,
+            "description": "HMAC-SHA1, HMAC-SHA256, etc."
+          },
+          "version": {
+            "type": "string",
+            "default": "1.0"
+          },
+          "accessToken": {
             "type": "string"
+          },
+          "accessTokenSecret": {
+            "type": "string",
+            "description": "Optional depending on the requirements of the endpoint, may also be called 'Token Secret'"
+          },
+          "realm": {
+            "type": "string",
+            "description": "Optional depending on the requirements of the endpoint"
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "OAuth1 access tokens do not typically expire, but this field may be useful for some implementations"
           }
         }
       },
