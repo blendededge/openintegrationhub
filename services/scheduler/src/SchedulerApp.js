@@ -18,6 +18,7 @@ class SchedulerApp extends App {
         await amqp.start();
         this._initHealthcheckApi(config.get('LISTEN_PORT'));
         const channel = await amqp.getConnection().createChannel();
+        await channel.prefetch(process.env.PREFETCH_COUNT || 100);
         const queueCreator = new QueueCreator(channel);
 
         const mongooseOptions = {
