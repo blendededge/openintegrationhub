@@ -44,6 +44,12 @@ class RabbitMqQueuesManager extends QueuesManager {
             BACKCHANNEL_EXCHANGE,
             BACKCHANNEL_DEAD_LETTER_KEY
         );
+        const BACKCHANNEL_DEAD_LETTER_QUEUE = `${BACKCHANNEL_EXCHANGE}:deadletter`;
+        await this._queueCreator.assertMessagesQueue(
+            BACKCHANNEL_DEAD_LETTER_QUEUE,
+            BACKCHANNEL_EXCHANGE
+        );
+        await this._queueCreator.bindQueue(BACKCHANNEL_DEAD_LETTER_QUEUE, BACKCHANNEL_EXCHANGE, BACKCHANNEL_DEAD_LETTER_KEY);
         await this._queueCreator.bindQueue(BACKCHANNEL_MESSAGES_QUEUE, BACKCHANNEL_EXCHANGE, BACKCHANNEL_INPUT_KEY);
         await this._queueCreator.bindQueue(BACKCHANNEL_MESSAGES_QUEUE, BACKCHANNEL_EXCHANGE, BACKCHANNEL_STATE_KEY);
         await this._queueCreator.bindQueue(BACKCHANNEL_ERROR_QUEUE, BACKCHANNEL_EXCHANGE, BACKCHANNEL_ERROR_KEY);
