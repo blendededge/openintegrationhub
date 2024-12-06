@@ -129,10 +129,10 @@ const testRefs = {
 
 beforeAll(async () => {
   iamMock.setup();
-  mainServer.setupMiddleware();
+  await mainServer.setupMiddleware();
   mainServer.setupRoutes();
   mainServer.setupSwagger();
-  mainServer.setup(mongoose);
+  await mainServer.setup(mongoose);
   app = mainServer.listen();
 
   nock(config.flowRepoUrl)

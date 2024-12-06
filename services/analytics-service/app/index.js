@@ -15,11 +15,11 @@ const mainServer = new Server();
     if (!module.parent) {
       await mainServer.setup(mongoose);
     }
-    mainServer.setupCors();
+    await mainServer.setupCors();
     // mainServer.setupMiddleware();
     mainServer.setupRoutes();
     mainServer.setupSwagger();
-    mainServer.setupQueue();
+    await mainServer.setupQueue();
 
     if (!module.parent) {
       mainServer.listen(process.env.PORT || 3009);

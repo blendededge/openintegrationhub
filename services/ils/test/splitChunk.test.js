@@ -25,7 +25,7 @@ const log = require('../app/config/logger');
 beforeAll(async () => {
   mainServer.setupRoutes();
   mainServer.setupSwagger();
-  mainServer.setup(mongoose);
+  await mainServer.setup(mongoose);
   app = mainServer.listen();
 });
 

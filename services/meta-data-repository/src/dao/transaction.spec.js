@@ -42,7 +42,7 @@ describe('Transaction', () => {
 
         // start session
         const session = await mongoose.startSession();
-        session.startTransaction();
+        await session.startTransaction();
 
         await SchemaDAO.create({
             obj: {

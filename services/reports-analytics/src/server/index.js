@@ -111,7 +111,7 @@ module.exports = class Server {
     }
 
     async handleEvent(event) {
-        this.writeTs(event, this.eventMap.get(event.name));
+        await this.writeTs(event, this.eventMap.get(event.name));
     }
 
     async start() {
@@ -140,7 +140,7 @@ module.exports = class Server {
             }
         } catch (err) {
             logger.error(err);
-            this.stop();
+            await this.stop();
         }
     }
 
