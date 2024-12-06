@@ -146,7 +146,7 @@ class App {
 
     async setupOidcProvider() {
         this.provider = await createOIDCProvider();
-        addOIDCRoutes(this.app, this.provider, this.corsOptions);
+        await addOIDCRoutes(this.app, this.provider, this.corsOptions);
     }
 
     setupRoutes() {
