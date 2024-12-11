@@ -57,11 +57,11 @@ async function getAndUpdateFlowStats(auth) {
     }
 
     for (const templateId in templateUsage) {
-      upsertFlowTemplateUsage(templateId, templateUsage[templateId]);
+      await upsertFlowTemplateUsage(templateId, templateUsage[templateId]);
     }
 
     for (const componentId in componentUsage) {
-      upsertComponentUsage(componentId, componentUsage[componentId]);
+      await upsertComponentUsage(componentId, componentUsage[componentId]);
     }
 
     const inactiveFlows = await getFlows(auth, 'inactive');

@@ -40,7 +40,7 @@ export default class DataHubApp extends App {
     protected async _run(): Promise<void> {
         const container = this.getContainer();
         const config = container.resolve('config');
-        const logger = <Logger>container.resolve('logger');
+        const logger = <Logger>await container.resolve('logger');
         const mongooseOptions = {
             socketTimeoutMS: 60000,
         };
@@ -52,11 +52,11 @@ export default class DataHubApp extends App {
         });
 
         const NEW_RECORD_EVENT_NAME = 'validation.success';
-        eventBus.subscribe(NEW_RECORD_EVENT_NAME, async (evt: IDataRecordEvent) => {
+        await eventBus.subscribe(NEW_RECORD_EVENT_NAME, async (evt: IDataRecordEvent) => {
             const { data, meta } = evt.payload;
             const { domainId, schemaUri, recordUid, applicationUid } = meta;
-            const log = logger.child({recordUid, applicationUid});
-            log.trace({event: evt.toJSON()}, `Received ${NEW_RECORD_EVENT_NAME} event`);
+            const log = logger.child({ recordUid, applicationUid });
+            log.trace({ event: evt.toJSON() }, `Received ${NEW_RECORD_EVENT_NAME} event`);
 
             const oldRecord = await DataObject.findOne({
                 refs: {
@@ -73,7 +73,7 @@ export default class DataHubApp extends App {
                     const newContent = resolveConflict(data, oldRecord.content)
 
                     // If CFM returns an empty object, incoming data is an exact duplicate and can be discarded
-                    if (newContent  === {}) {
+                    if (newContent === {}) {
                         await evt.ack();
                         return
                     }
@@ -85,7 +85,7 @@ export default class DataHubApp extends App {
                             name: 'data-hub.record.updated'
                         },
                         payload: {
-                            meta: Object.assign({}, meta, {oihUid: oldRecord.id, refs: oldRecord.refs}),
+                            meta: Object.assign({}, meta, { oihUid: oldRecord.id, refs: oldRecord.refs }),
                             data: newContent
                         }
                     });
@@ -110,7 +110,7 @@ export default class DataHubApp extends App {
                             name: 'data-hub.record.created'
                         },
                         payload: {
-                            meta: Object.assign({}, meta, {oihUid: newRecord.id}),
+                            meta: Object.assign({}, meta, { oihUid: newRecord.id }),
                             data
                         }
                     });
@@ -118,7 +118,7 @@ export default class DataHubApp extends App {
                     await eventBus.publish(recordCreatedEvent);
                 }
             } catch (e) {
-                logger.error({err: e, event: evt.toJSON()}, 'Failed to save data record');
+                logger.error({ err: e, event: evt.toJSON() }, 'Failed to save data record');
                 await evt.nack();
                 return;
             }
@@ -127,11 +127,11 @@ export default class DataHubApp extends App {
         });
 
         const NEW_REF_EVENT_NAME = 'ref.create';
-        eventBus.subscribe(NEW_REF_EVENT_NAME, async (evt: IDataRecordRefEvent) => {
+        await eventBus.subscribe(NEW_REF_EVENT_NAME, async (evt: IDataRecordRefEvent) => {
             const { meta } = evt.payload;
             const { oihUid, applicationUid, recordUid } = meta;
-            const log = logger.child({oihUid, applicationUid, recordUid});
-            log.trace({event: evt.toJSON()}, `Received ${NEW_REF_EVENT_NAME} event`);
+            const log = logger.child({ oihUid, applicationUid, recordUid });
+            log.trace({ event: evt.toJSON() }, `Received ${NEW_REF_EVENT_NAME} event`);
 
             const dataRecord = await DataObject.findById(oihUid);
             if (dataRecord) {

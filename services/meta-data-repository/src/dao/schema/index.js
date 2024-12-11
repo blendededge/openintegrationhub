@@ -19,7 +19,7 @@ async function getReferences(uri) {
 module.exports = {
     async startTransaction() {
         const session = await mongoose.startSession();
-        session.startTransaction();
+        await session.startTransaction();
         return session;
     },
 
