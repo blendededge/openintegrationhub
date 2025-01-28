@@ -9,6 +9,7 @@ const {
     OA2_AUTHORIZATION_CODE,
     SESSION_AUTH,
     OA2_PASSWORD,
+    OA2_CLIENT_CREDENTIALS,
 } = require('../../constant').AUTH_TYPE;
 
 const { Schema } = mongoose;
@@ -151,6 +152,35 @@ module.exports = {
             predefinedScope: String,
             username: String,
             password: String,
+        })),
+    [OA2_CLIENT_CREDENTIALS]:
+        AuthClient.discriminator(`A_${OA2_CLIENT_CREDENTIALS}`, new Schema({
+            clientId: {
+                type: String,
+                required: true,
+            },
+            clientSecret: {
+                type: String,
+                required: true,
+            },
+            endpoints: {
+                token: {
+                    type: String,
+                    required: true,
+                },
+                revocation: String,
+            },
+            includeCredentialsInHeader: {
+                type: Boolean,
+                default: false,
+                description: 'If true, credentials will be sent in Authorization header as Basic auth. If false, in request body.',
+            },
+            predefinedScope: String,
+            customFields: {
+                type: Map,
+                of: String,
+                description: 'Additional fields required by specific providers',
+            },
         })),
     [SESSION_AUTH]:
         AuthClient.discriminator(`A_${SESSION_AUTH}`, new Schema({

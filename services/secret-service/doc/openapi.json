@@ -520,6 +520,63 @@
         }
       }
     },
+    "/api/v1/secrets/{id}/revoke": {
+      "post": {
+        "tags": ["Secrets"],
+        "summary": "Revoke a client credentials token",
+        "description": "Revokes the access token for a client credentials secret and deletes the secret. Only works for OA2_CLIENT_CREDENTIALS type secrets.",
+        "operationId": "revokeClientCredentialsToken",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "ID of the secret to revoke"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Token successfully revoked and secret deleted"
+          },
+          "400": {
+            "description": "Invalid request - secret is not of type OA2_CLIENT_CREDENTIALS",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401Unauthorized"
+          },
+          "404": {
+            "description": "Secret or associated auth client not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error during revocation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/healthcheck" : {
       "get" : {
         "servers": [
@@ -568,7 +625,8 @@
           "$ref": "#/components/schemas/MutableSessionAuthClient"
         }, {
           "$ref": "#/components/schemas/MutableOA2PasswordClient"
-        
+        }, {
+          "$ref": "#/components/schemas/MutableOA2ClientCredentialsClient"
         } ],
         "discriminator": {
           "propertyName": "type",
@@ -577,7 +635,8 @@
             "OA1_THREE_LEGGED": "#/components/schemas/MutableOA1ThreeLeggedClient",
             "OA2_AUTHORIZATION_CODE": "#/components/schemas/MutableOA2AuthorizationCodeClient",
             "OA2_PASSWORD": "#/components/schemas/MutableOA2PasswordClient",
-            "SESSION_AUTH": "#/components/schemas/MutableSessionAuthClient"
+            "SESSION_AUTH": "#/components/schemas/MutableSessionAuthClient",
+            "OA2_CLIENT_CREDENTIALS": "#/components/schemas/MutableOA2ClientCredentialsClient"
           }
         }
       },
@@ -861,6 +920,8 @@
           "$ref": "#/components/schemas/SessionAuthClient"
         }, {
           "$ref": "#/components/schemas/OA2PasswordClient"
+        }, {
+          "$ref": "#/components/schemas/OA2ClientCredentialsClient"
         } ],
         "discriminator": {
           "propertyName": "type",
@@ -869,7 +930,8 @@
             "OA1_THREE_LEGGED": "#/components/schemas/MutableOA1ThreeLeggedClient",
             "OA2_AUTHORIZATION_CODE": "#/components/schemas/MutableOA2AuthorizationCodeClient",
             "OA2_PASSWORD": "#/components/schemas/MutableOA2PasswordClient",
-            "SESSION_AUTH": "#/components/schemas/MutableSessionAuthClient"
+            "SESSION_AUTH": "#/components/schemas/MutableSessionAuthClient",
+            "OA2_CLIENT_CREDENTIALS": "#/components/schemas/MutableOA2ClientCredentialsClient"
           }
         }
       },
@@ -1057,6 +1119,233 @@
           }
         }
       },
+      "AuthFlow" : {
+        "type" : "object",
+        "properties" : {
+          "scope" : {
+            "type" : "string"
+          },
+          "secretName" : {
+            "type" : "string"
+          },
+          "successUrl" : {
+            "type" : "string"
+          }
+        },
+        "examples": {
+          "clientCredentials": {
+            "summary": "Client Credentials Flow",
+            "value": {
+              "scope": "https://graph.microsoft.com/.default",
+              "secretName": "Azure Graph API Access"
+            }
+          }
+        }
+      },
+      "Meta" : {
+        "type" : "object",
+        "properties" : {
+          "page" : {
+            "type" : "integer",
+            "example": 1
+          },
+          "perPage" : {
+            "type" : "integer",
+            "example": 10
+          },
+          "total" : {
+            "type" : "integer",
+            "example": 15
+          },
+          "totalPages" : {
+            "type" : "integer",
+            "example": 2
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": ["message"],
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "MutableOA2ClientCredentialsClient": {
+        "required": ["name", "owners", "type", "clientId", "clientSecret", "endpoints"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "owners": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Owner"
+            }
+          },
+          "type": {
+            "type": "string",
+            "enum": ["OA1_TWO_LEGGED", "OA1_THREE_LEGGED", "OA2_AUTHORIZATION_CODE", "SESSION_AUTH", "OA2_PASSWORD", "OA2_CLIENT_CREDENTIALS"]
+          },
+          "clientId": {
+            "type": "string",
+            "example": "292085223830.apps.example.com"
+          },
+          "clientSecret": {
+            "type": "string",
+            "example": "F4B82757C43741436B195B28AF4AF"
+          },
+          "endpoints": {
+            "type": "object",
+            "required": ["token"],
+            "properties": {
+              "token": {
+                "type": "string",
+                "description": "Token endpoint URL. Supports template variables (e.g., {{tenant}}, {{region}})",
+                "example": "https://login.microsoftonline.com/{{tenant}}/oauth2/v2.0/token"
+              },
+              "revocation": {
+                "type": "string",
+                "description": "Optional token revocation endpoint URL (RFC 7009). Supports template variables.",
+                "example": "https://login.microsoftonline.com/{{tenant}}/oauth2/v2.0/revoke"
+              }
+            }
+          },
+          "includeCredentialsInHeader": {
+            "type": "boolean",
+            "description": "If true, credentials will be sent in Authorization header as Basic auth. If false, in request body.",
+            "default": false
+          },
+          "predefinedScope": {
+            "type": "string",
+            "description": "Fixed scope(s) to be used for all token requests",
+            "example": "https://graph.microsoft.com/.default"
+          },
+          "customFields": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Additional fields required by specific providers. Values can contain template variables that will be replaced with values from secret's inputFields.",
+            "example": {
+              "resource": "{{resource}}",
+              "audience": "{{audience}}"
+            }
+          }
+        },
+        "example": {
+          "name": "Azure Service Principal",
+          "type": "OA2_CLIENT_CREDENTIALS",
+          "clientId": "6b748782-da06-4d60-9e61-8be7dd78a323",
+          "clientSecret": "Qo28Q~ashj32nJHSAd8ajhsAhj32njk2n3jkJHSjk",
+          "endpoints": {
+            "token": "https://login.microsoftonline.com/{{tenant}}/oauth2/v2.0/token",
+            "revocation": "https://login.microsoftonline.com/{{tenant}}/oauth2/v2.0/revoke"
+          },
+          "includeCredentialsInHeader": false,
+          "predefinedScope": "https://graph.microsoft.com/.default",
+          "customFields": {
+            "resource": "{{resource}}"
+          },
+          "owners": [
+            {
+              "id": "617082258803c70031f85b26",
+              "type": "USER"
+            }
+          ]
+        }
+      },
+      "OA2ClientCredentialsClient": {
+        "allOf": [
+          { "$ref": "#/components/schemas/MutableOA2ClientCredentialsClient" },
+          {
+            "required": ["createdAt", "_id"],
+            "type": "object",
+            "properties": {
+              "_id": {
+                "type": "string",
+                "example": ""
+              },
+              "createdAt": {
+                "type": "string",
+                "description": "Client creation time",
+                "format": "date-time"
+              },
+              "updatedAt": {
+                "type": "string",
+                "description": "Client update time",
+                "format": "date-time"
+              }
+            }
+          }
+        ]
+      },
+      "OA2ClientCredentialsSecret": {
+        "required": ["authClientId", "accessToken", "tokenType"],
+        "type": "object",
+        "properties": {
+          "authClientId": {
+            "type": "string",
+            "description": "Id of the auth client this secret was created with"
+          },
+          "accessToken": {
+            "type": "string"
+          },
+          "tokenType": {
+            "type": "string",
+            "description": "Type of access token. Currently supported: Bearer, MAC, Basic",
+            "enum": ["Bearer", "MAC", "Basic"],
+            "example": "Bearer"
+          },
+          "scope": {
+            "type": "string",
+            "description": "Space-separated list of scopes granted"
+          },
+          "expires": {
+            "type": "string",
+            "description": "Date object in UTC",
+            "format": "date-time"
+          },
+          "fullResponse": {
+            "type": "string",
+            "description": "The full success response from the token endpoint (stored encrypted)"
+          },
+          "inputFields": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Values used to replace template variables in auth client endpoints and customFields",
+            "example": {
+              "tenant": "72f988bf-86f1-41af-91ab-2d7cd011db47",
+              "resource": "https://graph.microsoft.com"
+            }
+          }
+        },
+        "example": {
+          "name": "Azure Graph API Access",
+          "type": "OA2_CLIENT_CREDENTIALS",
+          "value": {
+            "authClientId": "61719514a477890012b804b9",
+            "accessToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Ii1zeE1KTUxDSURXTVRQdlp5SjZ0eC1DRHh3MCIsImtpZCI6Ii1zeE1KTUxDSURXTVRQdlp5SjZ0eC1DRHh3MCJ9.eyJhdWQiOiJodHRwczovL2dyYXBoLm1pY3Jvc29mdC5jb20iLCJpc3MiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC83MmY5ODhiZi04NmYxLTQxYWYtOTFhYi0yZDdjZDAxMWRiNDcvIiwiaWF0IjoxNjE5NjM0NzQ4LCJuYmYiOjE2MTk2MzQ3NDgsImV4cCI6MTYxOTYzODY0OCwiYWlvIjoiRTJaZ1lQZ3RyOWpYOWJ6L3RmMWY4ZnV4eW9VNUFBPT0iLCJhcHBfZGlzcGxheW5hbWUiOiJHcmFwaCBFeHBsb3JlciIsImFwcGlkIjoiZGU4YmM4YjUtZDlmOS00OGIxLWE4YWQtYjc0OGRhNzI1MDY0IiwiYXBwaWRhY3IiOiIxIiwiaWRwIjoiaHR0cHM6Ly9zdHMud2luZG93cy5uZXQvNzJmOTg4YmYtODZmMS00MWFmLTkxYWItMmQ3Y2QwMTFkYjQ3LyIsImlkdHlwIjoiYXBwIiwib2lkIjoiNjAwNTdkNWUtZjY5OS00YjcwLTlmMWMtNzBhNjQ5YjhlNzRjIiwicmgiOiIwLkFUY0FGV3hfTndrQWwwR2dwdGJ0ZFZ1UC1ra21qZll3c3hOUGh3b0FBQUFBQUFBQUFBQXdBQUEuIiwic3ViIjoiNjAwNTdkNWUtZjY5OS00YjcwLTlmMWMtNzBhNjQ5YjhlNzRjIiwidGVuYW50X3JlZ2lvbl9zY29wZSI6Ik5BIiwidGlkIjoiNzJmOTg4YmYtODZmMS00MWFmLTkxYWItMmQ3Y2QwMTFkYjQ3IiwidXRpIjoiNl9ZWkxZNjVvVUdKeWNZUkpXOTVBQSIsInZlciI6IjEuMCIsInhtc190Y2R0IjoxNDk4NzU0NzQ0fQ.Y2L5P",
+            "tokenType": "Bearer",
+            "scope": "https://graph.microsoft.com/.default",
+            "expires": "2023-12-31T23:59:59Z",
+            "fullResponse": "{\"token_type\":\"Bearer\",\"expires_in\":3599,\"ext_expires_in\":3599,\"access_token\":\"eyJ0eXA...\"}",
+            "inputFields": {
+              "tenant": "72f988bf-86f1-41af-91ab-2d7cd011db47",
+              "resource": "https://graph.microsoft.com"
+            }
+          },
+          "owners": [
+            {
+              "id": "617082258803c70031f85b26",
+              "type": "USER"
+            }
+          ]
+        }
+      },
       "MutableSecret" : {
         "required" : [ "name", "type", "owners" ],
         "type" : "object",
@@ -1081,7 +1370,8 @@
                 "OA1_TWO_LEGGED": "#/components/schemas/OA1TwoLeggedSecret",
                 "OA1_THREE_LEGGED": "#/components/schemas/OA1ThreeLeggedSecret",
                 "OA2_AUTHORIZATION_CODE": "#/components/schemas/OA2AuthorizationCodeSecret",
-                "OA2_PASSWORD": "#/components/schemas/OA2PasswordSecret"
+                "OA2_PASSWORD": "#/components/schemas/OA2PasswordSecret",
+                "OA2_CLIENT_CREDENTIALS": "#/components/schemas/OA2ClientCredentialsSecret"
               }
             },
             "oneOf" : [ {
@@ -1100,6 +1390,8 @@
               "$ref": "#/components/schemas/OA2AuthorizationCodeSecret"
             }, {
               "$ref": "#/components/schemas/OA2PasswordSecret"
+            }, {
+              "$ref": "#/components/schemas/OA2ClientCredentialsSecret"
             } ]
           },
           "owners" : {
@@ -1346,50 +1638,6 @@
             "items": {
               "$ref": "#/components/schemas/Owner"
             }
-          }
-        }
-      },
-      "AuthFlow" : {
-        "type" : "object",
-        "properties" : {
-          "scope" : {
-            "type" : "string"
-          },
-          "secretName" : {
-            "type" : "string"
-          },
-          "successUrl" : {
-            "type" : "string"
-          }
-        }
-      },
-      "Meta" : {
-        "type" : "object",
-        "properties" : {
-          "page" : {
-            "type" : "integer",
-            "example": 1
-          },
-          "perPage" : {
-            "type" : "integer",
-            "example": 10
-          },
-          "total" : {
-            "type" : "integer",
-            "example": 15
-          },
-          "totalPages" : {
-            "type" : "integer",
-            "example": 2
-          }
-        }
-      },
-      "ErrorResponse": {
-        "type": "object",
-        "required": ["message"],
-        "properties": {
-          "message": {
-            "type": "string"
           }
         }
       }

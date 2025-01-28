@@ -5,13 +5,17 @@ const { getKeyParameter, getKey } = require('../../middleware/key');
 
 const conf = require('../../conf');
 const SecretDAO = require('../../dao/secret');
+const AuthClientDAO = require('../../dao/auth-client');
 const { ROLE, AUTH_TYPE } = require('../../constant');
 const { maskString, maskSecret } = require('../../util/common');
 const Pagination = require('../../util/pagination');
 const handleOAuth2Password = require('../callback/handle-oauth2-password');
+const handleOAuth2ClientCredentials = require('../callback/handle-oauth2-client-credentials');
+const authFlowManager = require('../../auth-flow-manager');
+const moment = require('moment');
 
 const {
-    SIMPLE, MIXED, API_KEY, OA2_AUTHORIZATION_CODE, SESSION_AUTH, OA2_PASSWORD,
+    SIMPLE, MIXED, API_KEY, OA2_AUTHORIZATION_CODE, SESSION_AUTH, OA2_PASSWORD, OA2_CLIENT_CREDENTIALS,
 } = AUTH_TYPE;
 
 const log = logger.getLogger(`${conf.log.namespace}/secrets`);
@@ -40,6 +44,11 @@ const secretObfuscator = {
         inputFields: '***',
     }),
 
+    [OA2_CLIENT_CREDENTIALS]: (secretValue) => ({
+        ...secretValue,
+        accessToken: maskString(secretValue.accessToken),
+        fullResponse: '***',
+    }),
 };
 
 class SecretsRouter {
@@ -129,15 +138,18 @@ class SecretsRouter {
                     throw new Error('The "type" field is required');
                 }
 
-                // if type is OA2_PASSWORD, use the specified auth client to generate token
+                // Handle different auth types
                 if (data.type === OA2_PASSWORD) {
                     data = await handleOAuth2Password(data);
+                } else if (data.type === OA2_CLIENT_CREDENTIALS) {
+                    data = await handleOAuth2ClientCredentials(data);
                 }
 
                 const owners = [{
                     id: req.user.sub.toString(),
                     type: ROLE.USER,
                 }].concat(data.owners && data.owners.length ? data.owners : []);
+
                 res.send({
                     data: await SecretDAO.create({
                         ...data,
@@ -326,6 +338,49 @@ class SecretsRouter {
                 log.error(err, { 'x-request-id': req.headers['x-request-id'] });
                 next({
                     err,
+                    status: 500,
+                    message: err.message,
+                });
+            }
+        });
+
+        this.router.post('/:id/revoke', userIsOwnerOfSecret, getKeyParameter, getKey, async (req, res, next) => {
+            try {
+                const secret = req.obj;
+                if (!secret) {
+                    return res.sendStatus(404);
+                }
+
+                if (secret.type !== OA2_CLIENT_CREDENTIALS) {
+                    return next({
+                        status: 400,
+                        message: 'Only client credentials tokens can be revoked through this endpoint',
+                    });
+                }
+
+                const authClient = await AuthClientDAO.findOne({
+                    _id: secret.value.authClientId,
+                });
+
+                if (!authClient) {
+                    return next({
+                        status: 404,
+                        message: 'Associated auth client not found',
+                    });
+                }
+
+                await authFlowManager.revokeClientCredentials(authClient, secret);
+
+                // Delete the secret after successful revocation
+                await SecretDAO.delete({
+                    id: secret._id,
+                    ownerId: req.user.sub.toString(),
+                });
+
+                res.sendStatus(204);
+            } catch (err) {
+                log.error('Token revocation failed:', err);
+                next({
                     status: 500,
                     message: err.message,
                 });
