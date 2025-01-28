@@ -12,7 +12,6 @@ const Pagination = require('../../util/pagination');
 const handleOAuth2Password = require('../callback/handle-oauth2-password');
 const handleOAuth2ClientCredentials = require('../callback/handle-oauth2-client-credentials');
 const authFlowManager = require('../../auth-flow-manager');
-const moment = require('moment');
 
 const {
     SIMPLE, MIXED, API_KEY, OA2_AUTHORIZATION_CODE, SESSION_AUTH, OA2_PASSWORD, OA2_CLIENT_CREDENTIALS,
