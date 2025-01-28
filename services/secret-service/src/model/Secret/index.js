@@ -12,6 +12,7 @@ const {
     OA2_AUTHORIZATION_CODE,
     SESSION_AUTH,
     OA2_PASSWORD,
+    OA2_CLIENT_CREDENTIALS,
 } = AUTH_TYPE;
 
 const { Schema } = mongoose;
@@ -180,6 +181,7 @@ module.exports = {
                     // Default error message, overridden by 2nd argument to `cb()` above
                     message: 'Auth client is not existing',
                 },
+
             },
             refreshToken: {
                 type: String,
@@ -227,6 +229,32 @@ module.exports = {
             refreshToken: String,
             scope: String,
             fullResponse: String,
+        },
+    })),
+    [OA2_CLIENT_CREDENTIALS]: Secret.discriminator(`S_${OA2_CLIENT_CREDENTIALS}`, new Schema({
+        value: {
+            authClientId: {
+                type: Schema.Types.ObjectId,
+                required: true,
+                validate: {
+                    validator: (v) => new Promise((resolve) => {
+                        AuthClient.full.findOne({ _id: v }, (err, doc) => {
+                            if (err || !doc) {
+                                resolve(false);
+                            } else {
+                                resolve(true);
+                            }
+                        });
+                    }),
+                    message: 'Auth client does not exist',
+                },
+            },
+            accessToken: String,
+            tokenType: String,
+            expires: String,
+            scope: String,
+            fullResponse: String,
+            inputFields: Schema.Types.Mixed,
         },
     })),
 };

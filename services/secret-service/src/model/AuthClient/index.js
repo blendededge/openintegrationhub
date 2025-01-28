@@ -38,29 +38,29 @@ const AuthClient = mongoose.model('auth-client', authClientBaseSchema);
 module.exports = {
     full: AuthClient,
     [OA1_TWO_LEGGED]:
-    AuthClient.discriminator(`C_${OA1_TWO_LEGGED}`, new Schema({
-        consumerKey: {
-            type: String,
-            required: true,
-        },
-        consumerSecret: {
-            type: String,
-            required: true,
-        },
-        nonce: {
-            type: String,
-            required: true,
-        },
-        signature: {
-            type: String,
-            required: true,
-        },
-        signatureMethod: {
-            type: String,
-            required: true,
-        },
-        verifier: String,
-    })),
+        AuthClient.discriminator(`C_${OA1_TWO_LEGGED}`, new Schema({
+            consumerKey: {
+                type: String,
+                required: true,
+            },
+            consumerSecret: {
+                type: String,
+                required: true,
+            },
+            nonce: {
+                type: String,
+                required: true,
+            },
+            signature: {
+                type: String,
+                required: true,
+            },
+            signatureMethod: {
+                type: String,
+                required: true,
+            },
+            verifier: String,
+        })),
     [OA1_THREE_LEGGED]:
         AuthClient.discriminator(`C_${OA1_THREE_LEGGED}`, new Schema({
             appName: String,
