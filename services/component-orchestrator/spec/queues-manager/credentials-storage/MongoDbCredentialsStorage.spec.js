@@ -1,18 +1,8 @@
 const MongoDbCredentialsStorage = require('../../../src/queues-manager/credentials-storage/MongoDbCredentialsStorage');
 const { expect } = require('chai');
-const mongoose = require('mongoose');
 
 describe('MongoDbCredentialsStorage', () => {
     let cs;
-
-    before(async () => {
-        let mongoUri = process.env.MONGODB_URI ? process.env.MONGODB_URI : 'mongodb://localhost/test';
-        await mongoose.connect(mongoUri, {});
-    });
-
-    after(async () => {
-        await mongoose.disconnect();
-    });
 
     beforeEach(async () => {
         cs = new MongoDbCredentialsStorage();

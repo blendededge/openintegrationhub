@@ -51,8 +51,29 @@ class RabbitMqQueuesManager extends QueuesManager {
 
     async subscribeBackchannel(callback) {
         const processCallback = async (message) => {
-            await callback(message);
-            await this._queuePubSub.ack(message);
+            try {
+                // Let the callback determine success/failure
+                const result = await callback(message);
+                
+                if (result && result.success) {
+                    // Only acknowledge if processing was successful
+                    await this._queuePubSub.ack(message);
+                } else {
+                    // Reject and requeue if processing failed but should be retried
+                    const requeue = !result || result.requeue !== false;
+                    await this._queuePubSub.nack(message, false, requeue);
+                    
+                    this._logger.warn({
+                        messageId: message.properties.messageId,
+                        error: result && result.error,
+                        requeue
+                    }, 'Message processing failed');
+                }
+            } catch (err) {
+                // On unexpected errors, nack and requeue
+                this._logger.error({ err }, 'Error processing message');
+                await this._queuePubSub.nack(message, false, true);
+            }
         };
         return this._queuePubSub.subscribe(BACKCHANNEL_MESSAGES_QUEUE, processCallback.bind(this));
     }
