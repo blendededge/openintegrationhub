@@ -1,5 +1,4 @@
 const FlowStateDao = require('../../src/dao/FlowStateDao');
-const mongoose = require('mongoose');
 const { expect } = require('chai');
 
 const flowId = '123';
@@ -12,16 +11,7 @@ function getRandomInt(max) {
 
 describe('FlowStateDao', () => {
     before(async () => {
-        let mongoUri = process.env.MONGODB_URI ? process.env.MONGODB_URI : 'mongodb://localhost/test';
-        await mongoose.connect(mongoUri, {});
-        // await FlowStateDao.delete(flowExecId);
-        // await FlowStateDao.delete(flowExecId2);
         await FlowStateDao.deleteMany({});
-    });
-
-    after(async () => {
-        await FlowStateDao.deleteMany({});
-        await mongoose.disconnect();
     });
 
     describe('With flowId and stepId', () => {
@@ -104,12 +94,13 @@ describe('FlowStateDao', () => {
     });
 
     describe('#findByFlowExecId', () => {
-        before(async () => {
-            await FlowStateDao.upsertCount('my-flow', 'my-exec', 1, 1);
-        });
-
-        after(async () => {
-            await FlowStateDao.delete('my-exec');
+        beforeEach(async () => {
+            await FlowStateDao.create({
+                flowId: 'my-flow',
+                flowExecId: 'my-exec',
+                started: 1,
+                succeeded: 1
+            });
         });
 
         it('should not find exec that does not exist', async () => {
@@ -120,6 +111,9 @@ describe('FlowStateDao', () => {
         it('should find existing exec', async () => {
             const flowExec = await FlowStateDao.findByFlowExecId('my-exec');
             expect(flowExec).not.to.be.null;
+            expect(flowExec.flowId).to.equal('my-flow');
+            expect(flowExec.started).to.equal(1);
+            expect(flowExec.succeeded).to.equal(1);
         });
     });
 

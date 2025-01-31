@@ -237,3 +237,6 @@ stateDiagram-v2
    - Optimistic locking
    - Caching strategies
    - Index optimization 
+
+4. **Bug Fixes**
+   - The message ID is not unique, we need to find the unique message ID from RabbitMQ

@@ -97,9 +97,9 @@ class ExecutionStateDao {
     static async updateState({ executionId, currentState }) {
         return this.findOneAndUpdate(
             { executionId },
-            { 
+            {
                 $set: { currentState },
-                $push: { 
+                $push: {
                     stateHistory: {
                         state: currentState,
                         startedAt: new Date()
@@ -112,13 +112,13 @@ class ExecutionStateDao {
 
     static async completeState({ executionId, state }) {
         return this.findOneAndUpdate(
-            { 
+            {
                 executionId,
                 'stateHistory.state': state,
                 'stateHistory.completedAt': { $exists: false }
             },
-            { 
-                $set: { 
+            {
+                $set: {
                     'stateHistory.$.completedAt': new Date()
                 }
             },
@@ -218,8 +218,8 @@ class ExecutionStateDao {
         const now = new Date();
         return this.findOneAndUpdate(
             { executionId },
-            { 
-                $set: { 
+            {
+                $set: {
                     isCompleted: true,
                     completedAt: now
                 }
@@ -252,10 +252,31 @@ class ExecutionStateDao {
     static async findByFlowExecId(flowExecId) {
         return this.find({ flowExecId });
     }
+
+    /**
+     * Check if a specific state has been completed successfully
+     * @param {Object} params - The parameters
+     * @param {string} params.executionId - The execution ID
+     * @param {string} params.state - The state to check
+     * @returns {Promise<boolean>} - Whether the state was completed successfully
+     */
+    static async isStateCompleted({ executionId, state }) {
+        const execution = await this.findOne({
+            executionId,
+            stateHistory: {
+                $elemMatch: {
+                    state,
+                    completedAt: { $exists: true },
+                    error: { $exists: false }
+                }
+            }
+        });
+        return !!execution;
+    }
 }
 
 schema.loadClass(ExecutionStateDao);
 
 const ExecutionStateModel = mongoose.model('execution-state', schema);
 
-module.exports = ExecutionStateModel; 
+module.exports = ExecutionStateModel;
