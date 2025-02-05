@@ -1357,7 +1357,7 @@
           },
           "type" : {
             "type" : "string",
-            "enum" : ["API_KEY", "OA1_TWO_LEGGED", "OA1_THREE_LEGGED", "OA2_AUTHORIZATION_CODE", "SIMPLE", "MIXED", "SESSION_AUTH"]
+            "enum" : ["API_KEY", "OA1_TWO_LEGGED", "OA1_THREE_LEGGED", "OA2_AUTHORIZATION_CODE", "SIMPLE", "MIXED", "SESSION_AUTH", "OA2_CLIENT_CREDENTIALS"]
           },
           "value" : {
             "discriminator" : {
