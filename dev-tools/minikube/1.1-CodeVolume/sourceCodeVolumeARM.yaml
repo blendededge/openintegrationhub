@@ -8,5 +8,5 @@ spec:
   capacity:
     storage: 1Gi
   hostPath:
-    path: "/openintegrationhub"
+    path: "/Users/robbwinkle/git/blendededge/openintegrationhub"
   persistentVolumeReclaimPolicy: Retain
