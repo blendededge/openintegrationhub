@@ -376,11 +376,10 @@ function deployServices {
 }
 
 function sourceInstall {
-    rootdir="$(dirname $(dirname $(pwd)))" 
     for service in "${from_source[@]}"
     do
         colorEcho 34 "Installing deps for $service"
-        npm install --prefix $rootdir -w "$service" 
+        npm install --prefix "$HOST_OIH_DIRECTORY" -w "$service" 
     done
 }
 
@@ -792,6 +791,63 @@ function clearMinikube {
     fi
 }
 
+function cleanupResources {
+    colorEcho 34 "Checking if cleanup is needed..."
+    
+    # Only clean if requested or if namespaces don't exist
+    if [ "$clear_minikube" == "true" ]; then
+        colorEcho 33 "Cleanup requested via -c flag"
+        perform_cleanup
+    elif ! kubectl get ns oih-dev-ns > /dev/null 2>&1; then
+        colorEcho 33 "Namespace oih-dev-ns not found, performing first-time setup"
+        perform_cleanup
+    else
+        colorEcho 32 "Existing installation found, skipping cleanup"
+        # Only clean specific services
+        clean_specific_services
+    fi
+}
+
+function perform_cleanup {
+    colorEcho 33 "Performing full cleanup..."
+    
+    # Clean up all resources in oih-dev-ns
+    colorEcho 34 "Cleaning up oih-dev-ns namespace"
+    kubectl -n oih-dev-ns delete pods,services,deployments --all 2>/dev/null || true
+    kubectl -n oih-dev-ns delete pvc --all 2>/dev/null || true
+    kubectl delete pv local-volume 2>/dev/null || true
+    kubectl delete pv source-volume 2>/dev/null || true
+    kubectl delete ns oih-dev-ns 2>/dev/null || true
+
+    # Clean up flows namespace
+    colorEcho 34 "Cleaning up flows namespace"
+    kubectl -n flows delete pods,services,deployments --all 2>/dev/null || true
+    kubectl delete ns flows 2>/dev/null || true
+}
+
+function clean_specific_services {
+    # Clean up specific services that are being redeployed from source
+    if [ ${#from_source[@]} -gt 0 ]; then
+        colorEcho 34 "Cleaning up services marked for source deployment:"
+        for service in "${from_source[@]}"
+        do
+            colorEcho 35 "- Cleaning up $service"
+            kubectl -n oih-dev-ns delete deployment "$service" 2>/dev/null || true
+        done
+    fi
+
+    # Clean up skipped services
+    if [ ${#skip_services[@]} -gt 0 ]; then
+        colorEcho 34 "Cleaning up skipped services:"
+        for service in "${skip_services[@]}"
+        do
+            colorEcho 35 "- Cleaning up $service"
+            kubectl -n oih-dev-ns delete deployment "$service" 2>/dev/null || true
+            kubectl -n oih-dev-ns delete service "$service" 2>/dev/null || true
+        done
+    fi
+}
+
 trap cleanup EXIT
 
 checkOS
@@ -846,13 +902,16 @@ clearMinikube
 
 if [ "$os" == "Darwin" ]; then
     if [ "$machine" == "ARM" ]; then
-        minikube start --driver=docker --memory $MK_MEMORY --cpus $MK_CPUS --mount=true --mount-string="${HOST_OIH_DIRECTORY}:/openintegrationhub"
+        minikube start --driver=docker --memory $MK_MEMORY --cpus $MK_CPUS --mount=true --mount-string="${HOST_OIH_DIRECTORY}:/usr/src/app"
     else 
         minikube start --driver=hyperkit --vm=true --memory $MK_MEMORY --cpus $MK_CPUS
     fi
 else
     minikube start --memory $MK_MEMORY --cpus $MK_CPUS
 fi
+
+# cleanupResources handles all cleanup now
+cleanupResources
 
 ###
 ### 2a. If services will be loaded for development from source, build the NFS share
@@ -870,21 +929,7 @@ fi
 #minikube addons enable ingress
 minikube addons enable dashboard
 minikube addons enable metrics-server
-#if [ "$os" == "Darwin" ] && [ "$machine" == "ARM" ]; then
-#    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v0.44.0/deploy/static/provider/cloud/deploy.yaml
-#else
-    minikube addons enable ingress
-#fi
-
-# remove oih resources
-kubectl -n oih-dev-ns delete pods,services,deployments --all
-kubectl -n oih-dev-ns delete pvc --all
-kubectl delete pv local-volume || true
-kubectl delete pv source-volume || true
-kubectl delete ns oih-dev-ns || true
-
-kubectl -n flows delete pods,services,deployments --all
-kubectl delete ns flows || true
+minikube addons enable ingress
 
 ###
 ### 3. insert/update hosts entries
@@ -897,6 +942,7 @@ waitForPodStatus ingress-nginx-controller.*1/1
 if [ "$os" == "Darwin" ] && [ "$machine" == "ARM" ]; then
     minikube tunnel &
 fi
+
 ###
 ### 4. deploy platform base
 ###
@@ -907,7 +953,14 @@ if [ "$os" == "Darwin" ] && [ "$machine" == "ARM" ]; then
 else
     config_file="./1.1-CodeVolume/sourceCodeVolume.yaml"
 fi
-sed -i "s|\(.*path:\).*|\1 \"$HOST_OIH_DIRECTORY\"|" $config_file
+
+# Handle sed differences between macOS and Linux
+if [ "$os" == "Darwin" ]; then
+    sed -i '' "s|\(.*path:\).*|\1 \"$HOST_OIH_DIRECTORY\"|" $config_file
+else
+    sed -i "s|\(.*path:\).*|\1 \"$HOST_OIH_DIRECTORY\"|" $config_file
+fi
+
 kubectl apply -f $config_file
 kubectl apply -f ./1.2-CodeClaim
 

@@ -24,7 +24,7 @@ spec:
           image: node:16-alpine #openintegrationhub/iam:latest #
           command: ["/bin/sh"]
           args: ["-c", "npm run start:container -w services/component-orchestrator"]
-          workingDir: /usr/src/app/
+          workingDir: /usr/src/app
           env:
             - name: COMPONENT_REPOSITORY_BASE_URL
               value: "http://component-repository.oih-dev-ns.svc.cluster.local:1234"
@@ -64,7 +64,6 @@ spec:
           volumeMounts:
             - name: code
               mountPath: /usr/src/app
-              #readOnly: true
           livenessProbe:
             httpGet:
               port: 1234
