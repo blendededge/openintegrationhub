@@ -1131,15 +1131,6 @@
           "successUrl" : {
             "type" : "string"
           }
-        },
-        "examples": {
-          "clientCredentials": {
-            "summary": "Client Credentials Flow",
-            "value": {
-              "scope": "https://graph.microsoft.com/.default",
-              "secretName": "Azure Graph API Access"
-            }
-          }
         }
       },
       "Meta" : {
@@ -1497,20 +1488,18 @@
       },
       "OA1TwoLeggedSecret": {
         "type": "object",
+        "required": ["consumerKey", "consumerSecret", "signatureMethod"],
         "properties": {
           "consumerKey": {
             "type": "string",
-            "required": true,
             "description": "The Consumer Key may also be known as 'Client Key', 'Consumer Identifier', or 'API Key'"
           },
           "consumerSecret": {
             "type": "string",
-            "required": true,
             "description": "The Consumer Secret may also be known as 'Client Secret', 'Shared Secret', or 'API Secret'"
           },
           "signatureMethod": {
             "type": "string",
-            "required": true,
             "description": "HMAC-SHA1, HMAC-SHA256, etc."
           },
           "version": {
