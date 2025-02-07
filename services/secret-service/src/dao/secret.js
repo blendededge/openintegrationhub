@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const pull = require('lodash/pull');
 const { Event, EventBusManager, events } = require('@openintegrationhub/event-bus');
 const crypto = require('../util/crypto');
-const { OA2_AUTHORIZATION_CODE, SESSION_AUTH } = require('../constant').AUTH_TYPE;
+const { OA2_AUTHORIZATION_CODE, SESSION_AUTH, OA2_CLIENT_CREDENTIALS } = require('../constant').AUTH_TYPE;
 const { ENCRYPT, DECRYPT } = require('../constant').CRYPTO.METHODS;
 const { SENSITIVE_FIELDS, OBJECT_FIELDS } = require('../constant').CRYPTO;
 const authFlowManager = require('../auth-flow-manager');
@@ -132,6 +132,13 @@ const refresh = (secret, key, iter = 0) => new Promise(async (resolve, reject) =
                     case SESSION_AUTH:
                         _secret.value.accessToken = resp.access_token;
                         _secret.value.expires = resp.expires_in ? moment().add(resp.expires_in, 'seconds').toISOString() : null;
+                        break;
+                    case OA2_CLIENT_CREDENTIALS:
+                        _secret.value.accessToken = resp.access_token;
+                        _secret.value.tokenType = resp.token_type;
+                        _secret.value.expires = resp.expires_in ? moment().add(resp.expires_in, 'seconds').toISOString() : null;
+                        _secret.value.scope = resp.scope;
+                        _secret.value.fullResponse = JSON.stringify(resp);
                         break;
                     default:
                         break;

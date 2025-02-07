@@ -13,7 +13,7 @@ const conf = require('../../conf');
 const { AUTH_TYPE, ROLE } = require('../../constant');
 const Server = require('../../server');
 const {
-    SIMPLE, API_KEY, OA2_AUTHORIZATION_CODE, MIXED,
+    SIMPLE, API_KEY, OA2_AUTHORIZATION_CODE, MIXED, OA2_CLIENT_CREDENTIALS,
 } = require('../../constant').AUTH_TYPE;
 const { maskString } = require('../../util/common');
 const dummyUsers = require('../../test/tokens');
@@ -24,7 +24,7 @@ let server;
 
 describe('secrets', () => {
     beforeAll(async (done) => {
-        port = 5111;
+        port = 5116;
         request = supertest(`http://localhost:${port}${conf.apiBase}`);
         server = new Server({
             mongoDbConnection: global.__MONGO_URI__.replace('changeme', 'route-secrets'),
@@ -834,5 +834,37 @@ describe('secrets', () => {
             .expect(200)).body.meta;
 
         expect(meta.total).toBe(0);
+    });
+
+    // Test client credentials obfuscation
+    test('Client credentials secret obfuscation', async () => {
+        const clientCredentialsSecret = await request.post('/secrets')
+            .set(...global.userAuth1)
+            .send({
+                data: {
+                    name: 'Client Credentials Secret',
+                    type: OA2_CLIENT_CREDENTIALS,
+                    value: {
+                        accessToken: 'test_access_token',
+                        tokenType: 'Bearer',
+                        expires: '2024-03-28T14:09:52.428Z',
+                        scope: 'test_scope',
+                        fullResponse: JSON.stringify({
+                            access_token: 'test_access_token',
+                            token_type: 'Bearer',
+                            expires_in: 3600,
+                            scope: 'test_scope'
+                        })
+                    },
+                },
+            })
+            .expect(200);
+
+        const maskedClientCredentials = await request.get(`/secrets/${clientCredentialsSecret.body.data._id}`)
+            .set(...global.userAuth1)
+            .expect(200);
+
+        expect(maskedClientCredentials.body.data.value.accessToken).not.toBe('test_access_token');
+        expect(maskedClientCredentials.body.data.value.fullResponse).toBe('***');
     });
 });
