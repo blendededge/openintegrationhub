@@ -98,14 +98,18 @@ class AuthClientRouter {
         this.router.post('/', async (req, res, next) => {
             const data = req.body.data ? req.body.data : req.body;
             try {
+                const owners = [{
+                    id: req.user.sub.toString(),
+                    type: ENTITY_TYPE.USER,
+                }];
+                if (data.owners) {
+                    owners.push(...data.owners.filter((owner) => owner.id !== req.user.sub.toString()));
+                }
                 res.send({
                     data: maskAuthClient({
                         authClient: await AuthClientDAO.create({
                             ...data,
-                            owners: [{
-                                id: req.user.sub.toString(),
-                                type: ENTITY_TYPE.USER,
-                            }],
+                            owners,
                             tenant: req.user.tenant,
                         }),
                         requester: req.user,
