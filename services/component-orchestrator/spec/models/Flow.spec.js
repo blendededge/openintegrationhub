@@ -1,18 +1,8 @@
 const Flow = require('../../src/models/Flow');
 const chai = require('chai');
 const { expect } = chai;
-const mongoose = require('mongoose');
 
 describe('Flow model', () => {
-    before(async () => {
-        let mongoUri = process.env.MONGODB_URI ? process.env.MONGODB_URI : 'mongodb://localhost/test';
-        await mongoose.connect(mongoUri, {});
-    });
-
-    after(async () => {
-        await mongoose.disconnect();
-    });
-
     describe('isStarting', () => {
         it('should return true', () => {
             const flow = new Flow({

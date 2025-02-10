@@ -1,4 +1,3 @@
-const mongoose = require('mongoose');
 const Flow = require('../../src/models/Flow');
 const chai = require('chai');
 chai.use(require('sinon-chai'));
@@ -8,14 +7,6 @@ const { Event } = require('@openintegrationhub/event-bus');
 const sinon = require('sinon');
 
 describe('FlowStopping event handler', () => {
-    before(async () => {
-        let mongoUri = process.env.MONGODB_URI ? process.env.MONGODB_URI : 'mongodb://localhost/test';
-        await mongoose.connect(mongoUri, {});
-    });
-
-    after(async () => {
-        await mongoose.disconnect();
-    });
 
     let flowStopping;
 
