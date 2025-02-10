@@ -96,7 +96,7 @@ class ComponentOrchestratorApp extends App {
                     onCloseCallback: undefined,
                 }),
             }).singleton(),
-            executionStateDao: asClass(ExecutionStateDao),
+            executionStateDao: asValue(ExecutionStateDao),
             componentOrchestrator: asClass(ComponentOrchestrator),
         });
 
