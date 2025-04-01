@@ -85,3 +85,6 @@ An example of a requestConfig is:
 
 
 
+## Session Refresh
+When, why, and how the secret generated from a Session Auth client is refreshed.
+
