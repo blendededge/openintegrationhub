@@ -32,6 +32,56 @@ const data = {
 #### `expirationPath`
 The path to the expiration time in the JSON response from the token endpoint.
 
+If this field is not provided, then the secret will refetch the token every time it is accessed.
+
+The value of this field is assumed to be an integer of seconds. This number will be added to the current time to get the expiration date, which will be stored on the generated secret under the field `expires` as an ISO string, e.g. `2025-04-01T12:00:00.000Z`. If `expirationPath` is not provided then the value of `expires` will be null.
+
+#### `endpoints`
+An object with one required key: `auth`, which is the endpoint configuration for the auth request.
+
+This request configuration object has the structure:
+```js
+const requestField = new Schema({
+    key: {
+        type: String,
+        required: true,
+    },
+    value: String,
+}, { _id: false });
+
+const requestConfig = new Schema({
+    requestFields: [requestField],
+    label: String, // for documentation purposes
+    authType: {
+        type: String,
+        required: true,
+        enum: Object.values(requestTypes),
+    },
+    url: {
+        type: String,
+        required: true,
+    },
+}, { _id: false });
+```
+
+An example of a requestConfig is:
+```json
+{
+    "requestFields": [
+        {
+            "key": "username", 
+            "value": "{{username}}"
+        }, 
+        {
+            "key": "password", 
+            "value": "{{password}}"
+        }
+    ],
+    "label": "Login",
+    "authType": "HEADER_AUTH", // can be HEADER_AUTH, BODY_AUTH, PARAMS_AUTH, or FORM_AUTH
+    "url": "https://example.com/login"
+}
+```
 
 
 
