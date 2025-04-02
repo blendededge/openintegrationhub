@@ -219,7 +219,8 @@ module.exports = {
         // refresh secrets with refreshToken only
         let _secret = secret;
         if ((secret.type === OA2_AUTHORIZATION_CODE && secret.value.refreshToken)
-            || (secret.type === SESSION_AUTH)) {
+            || (secret.type === SESSION_AUTH)
+            || (secret.type === OA2_CLIENT_CREDENTIALS)) {
             _secret = await refresh(secret, key);
         }
         // exclude extra sensitive values

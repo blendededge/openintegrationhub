@@ -397,7 +397,7 @@ module.exports = {
                 scope: authClient.predefinedScope,
                 customFields: authClient.customFields ? Object.fromEntries(authClient.customFields) : {},
                 includeCredentialsInHeader: authClient.includeCredentialsInHeader,
-                inputFields: secret.value.inputFields || {}
+                inputFields: secret.value.inputFields || {},
             });
         }
         default:
