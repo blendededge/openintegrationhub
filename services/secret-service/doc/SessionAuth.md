@@ -83,6 +83,9 @@ An example of a requestConfig is:
 }
 ```
 
+Templating
+- Doesn't support nested objects – Only works with direct key-value pairs.
+- Doesn't handle multiple occurrences of the same placeholder – .replace() only replaces the first occurrence; use .replaceAll() or a regex for a full replacement.
 
 
 ## Session Refresh
