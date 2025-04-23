@@ -8,6 +8,6 @@ spec:
   capacity:
     storage: 1Gi
   nfs:
-    path: "/System/Volumes/Data/Users/james/OIH/openintegrationhub"
+    path: "/System/Volumes/Data/Users/robbwinkle/git/blendededge/openintegrationhub"
     server: host.docker.internal
   persistentVolumeReclaimPolicy: Retain
