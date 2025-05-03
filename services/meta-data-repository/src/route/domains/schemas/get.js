@@ -68,7 +68,7 @@ router.get('/:uri*', async (req, res, next) => {
     if (!req.user && isLocalRequest(req)) {
         return next();
     }
-    hasReadAccess(req, res, next);
+    await hasReadAccess(req, res, next);
 }, async (req, res, next) => {
     try {
         const schema = await SchemaDAO.findByURI({
