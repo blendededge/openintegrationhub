@@ -14,6 +14,7 @@ const iamUtils = require('@openintegrationhub/iam-utils');
 const mongoose = require('mongoose');
 const { EventBus } = require('@openintegrationhub/event-bus');
 const MongoDbCredentialsStorage = require('./queues-manager/credentials-storage/MongoDbCredentialsStorage');
+const ExecutionStateDao = require('./dao/ExecutionStateDao');
 
 class ComponentOrchestratorApp extends App {
     async _run() {
@@ -95,6 +96,7 @@ class ComponentOrchestratorApp extends App {
                     onCloseCallback: undefined,
                 }),
             }).singleton(),
+            executionStateDao: asValue(ExecutionStateDao),
             componentOrchestrator: asClass(ComponentOrchestrator),
         });
 
